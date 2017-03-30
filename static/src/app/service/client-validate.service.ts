@@ -25,6 +25,7 @@ export class ClientValidateService implements CanActivate {
         console.log(`client_id is ${this.client_id} and redirect_uri is ${this.redirect_uri}`)
         this.http.post(this.auth_client_uri, route.params).map(rea => {
           rea.json()
+          console.log(rea)
         }).subscribe((data) => {
           console.log(data)
           resolve(true)
