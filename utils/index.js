@@ -19,7 +19,7 @@ const Util = {
         return new Promise((resove, reject) => {
             let res = false;
             for (let i = 0; i < strs.length; i++) {
-                if (isEmpty(strs[i])) {
+                if (this.isEmpty(strs[i])) {
                     res = true;
                     break;
                 }

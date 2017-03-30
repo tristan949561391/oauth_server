@@ -18,6 +18,7 @@ app.use(convert(staticCache(path.join(__dirname, 'static/dist'), {
     maxAge: 365 * 24 * 60 * 60
 })));
 app.use(view(path.join(__dirname, 'static/dist'), {
+    extension: 'html',
     map: {
         html: 'ejs'
     }

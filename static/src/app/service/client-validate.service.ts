@@ -23,25 +23,19 @@ export class ClientValidateService implements CanActivate {
     return new Promise((resolve, reject) => {
       if (this.client_id != null && this.redirect_uri != null) {
         console.log(`client_id is ${this.client_id} and redirect_uri is ${this.redirect_uri}`)
-
-        this.validateClient(route.params).subscribe(() => {
+        this.http.post(this.auth_client_uri, route.params).map(rea => {
+          rea.json()
+        }).subscribe((data) => {
+          console.log(data)
           resolve(true)
-            , (err) => {
-            resolve(false)
-          }
-        });
+        }, (err) => {
+          console.log(err)
+          resolve(false)
+        })
       } else {
         console.log(`client_id is none and redirect_uri is none`)
         resolve(false)
       }
-    })
-  }
-
-  validateClient(params: any): Observable<Boolean> {
-    return this.http.post(this.auth_client_uri, params).map((res) => {
-      return true;
-    }).catch((err) => {
-      return Observable.throw(err);
     })
   }
 }
