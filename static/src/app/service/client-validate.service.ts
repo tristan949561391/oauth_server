@@ -1,7 +1,6 @@
 import {Injectable} from "@angular/core";
 import {ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot} from "@angular/router";
-import {Http, RequestOptions} from "@angular/http";
-import {Observable} from "rxjs";
+import {Http} from "@angular/http";
 
 @Injectable()
 export class ClientValidateService implements CanActivate {
@@ -9,30 +8,17 @@ export class ClientValidateService implements CanActivate {
   redirect_uri: string;
   state: string;
   scope: string;
-  auth_client_uri: string = '/oauth/client/validate'
 
   constructor(private http: Http) {
-
   }
-
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
     this.client_id = route.params['client_id'];
     this.redirect_uri = route.params['redirect_uri'];
     this.scope = route.params['scope'];
     this.state = route.params['state']
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (this.client_id != null && this.redirect_uri != null) {
-        console.log(`client_id is ${this.client_id} and redirect_uri is ${this.redirect_uri}`)
-        this.http.post(this.auth_client_uri, route.params).map(rea => {
-          rea.json()
-          console.log(rea)
-        }).subscribe((data) => {
-          console.log(data)
-          resolve(true)
-        }, (err) => {
-          console.log(err)
-          resolve(false)
-        })
+        resolve(true)
       } else {
         console.log(`client_id is none and redirect_uri is none`)
         resolve(false)

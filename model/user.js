@@ -2,6 +2,7 @@
  * Created by Tristan on 17/3/27.
  */
 const mongoose = require('mongoose');
+const mongoConn = require('./conn/mongoose')
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
@@ -19,4 +20,27 @@ const userSchema = new Schema({
     }
 });
 
-const User = mongoose.model('user_table', userSchema);
+userSchema.statics.findByUsername = (username) => {
+    return new Promise((resolve) => {
+        User.findOne({'username': username}, (err, user) => {
+            if (err) {
+                resolve(null)
+            }
+            resolve(user);
+        })
+    })
+}
+
+
+userSchema.statics.insertUser = async (user) => {
+    return new Promise((resove) => {
+        let userEntity = new User(user)
+        userEntity.save((err, data) => {
+            if (err) resove(null);
+            resove(data)
+        })
+    })
+}
+
+const User = mongoConn.model('user_table', userSchema);
+module.exports = User

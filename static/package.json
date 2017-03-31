@@ -5,7 +5,7 @@
   "angular-cli": {},
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --aot --prod",
+    "start": "ng serve",
     "compass": "compass watch",
     "build": "ng build --prod --aot",
     "test": "ng test",

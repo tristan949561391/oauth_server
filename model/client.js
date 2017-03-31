@@ -4,6 +4,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const conn = require('./conn/mongoose')
+const redis = require('./conn/redis')
 
 const clientSchema = new Schema({
     client_name: String,
@@ -18,10 +19,7 @@ const clientSchema = new Schema({
 clientSchema.statics.findByClientId = (client_id) => {
     return new Promise((r, j) => {
         Client.findOne({"client_id": client_id}, (err, client) => {
-            console.log(client)
-            if (err != null || client == null) {
-                j(new Error('client not find'))
-            }
+            if (err) j(err);
             r(client)
         })
     })
@@ -46,6 +44,7 @@ clientSchema.statics.insertClient = async (client) => {
         })
     })
 }
+
 
 const Client = conn.model('client_table', clientSchema);
 module.exports = Client

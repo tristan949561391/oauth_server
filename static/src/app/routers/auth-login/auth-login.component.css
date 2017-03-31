@@ -1,5 +1,5 @@
 /* line 3, auth-login.component.scss */
-form {
+.center-box {
   margin-left: auto;
   margin-right: auto;
   position: fixed;
@@ -10,12 +10,12 @@ form {
   margin-top: -200px;
 }
 /* line 12, auth-login.component.scss */
-form .form-group {
+.center-box .form-group {
   -moz-box-shadow: 0, 0, 1px 2px, rgba(0, 0, 0, 0.3);
   -webkit-box-shadow: 0, 0, 1px 2px, rgba(0, 0, 0, 0.3);
   box-shadow: 0, 0, 1px 2px, rgba(0, 0, 0, 0.3);
 }
 /* line 15, auth-login.component.scss */
-form .rounded {
+.center-box .rounded {
   border-radius: 10rem;
 }

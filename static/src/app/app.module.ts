@@ -11,6 +11,7 @@ import {AuthLoginComponent} from './routers/auth-login/auth-login.component';
 import {Ng2BootstrapModule} from "ng2-bootstrap";
 import { HomeComponent } from './routers/home/home.component';
 import {ClientValidateService} from "./service/client-validate.service";
+import {OauthService} from "./service/oauth.service";
 
 @NgModule({
   declarations: [
@@ -27,7 +28,7 @@ import {ClientValidateService} from "./service/client-validate.service";
     AppRouter,
     Ng2BootstrapModule.forRoot()
   ],
-  providers: [ClientValidateService],
+  providers: [ClientValidateService,OauthService],
   bootstrap: [AppComponent]
 })
 export class AppModule {
