@@ -6,18 +6,14 @@ const userService = require('../service/user.service')
 const ParamError = require('../error').ParamError;
 const commonUtil = require('../utils')
 const route = new Router().prefix('/user');
-route.post('/register.md', async (ctx) => {
-    let username = ctx.request.body.username;
-    if (!commonUtil.isMobile(username)) {
-        throw new ParamError(500, 'username must be mobile');
-    }
-    let password = ctx.request.body.password;
-    if (!commonUtil.isPassword(password)) {
-        throw new ParamError(500, 'password not legale');
-    }
-    let user = await userService.register(username, password);
-    ctx.body=user
-})
+const authorization = require('../service/oauth.service').authorization;
 
+route.use(authorization('profile_get'));
 
-module.exports = route
+route.get('/profile.md', async (ctx) => {
+    let userProfile = await userService.find_by_userId(ctx.user_id);
+    let user = userProfile._doc;
+    delete user.password;
+    ctx.body = user;
+});
+module.exports = route;

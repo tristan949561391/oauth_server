@@ -1,35 +1,47 @@
 /**
  * Created by tc949 on 2017/3/31.
  */
-const redis = require('../conn/redis')
-const codeUtils = require('../../utils').codeUtil
-const authcode_repository = {
-    build_authenticate_code: async (user, client, scope, state) => {
-        let code = codeUtils.authcode_builder();
-        let data = {
-            scope: scope,
-            user_id: user.id,
-            state: state,
-            client_id: client.client_id,
-            client_name: client.client_name,
-            client_secret: client.client_secret,
-            redirect_uri: client.redirect_uri,
-            date: new Date()
-        }
-        let code_key = 'auth_code:' + client.client_id + '-' + code
-        redis.set(code_key, JSON.stringify(data), () => {
-            redis.expire(code_key, 60);
-        });
-        return code;
-    },
-    finder_authenticate_code: (client_id, code) => {
-        return new Promise(resove => {
-            let code_key = 'auth_code:' + client_id + '-' + code
-            redis.get(code_key, (err, data) => {
-                if (err) resove(null);
-                resove(JSON.parse(data));
-            })
-        })
-    }
+const redis = require('../conn/redis');
+const codeUtils = require('../../utils').codeUtil;
+/**
+ * 创建零时授权码code
+ * @param user
+ * @param client
+ * @param scope
+ * @param state
+ * @returns {Promise.<object>}
+ */
+async function build_authenticate_code(user, client, scope, state) {
+    let code = codeUtils.authcode_builder();
+    let data = {
+        user: user,
+        client: client,
+        scope: scope,
+        state: state
+    };
+    let code_key = 'auth_code:' + client.client_id + '-' + code;
+    redis.set(code_key, JSON.stringify(data), () => {
+        redis.expire(code_key, 600);
+    });
+    return code;
 }
-module.exports = authcode_repository
+/**
+ * 查找出对应的零时授权码
+ * @param client_id
+ * @param code
+ * @returns {Promise}
+ */
+async function finder_authenticate_code(client_id, code) {
+    return new Promise(resolve => {
+        let code_key = 'auth_code:' + client_id + '-' + code;
+        redis.get(code_key, (err, data) => {
+            if (err || data === null) resolve(null);
+            redis.del(code_key);
+            resolve(JSON.parse(data));
+        })
+    })
+}
+module.exports = {
+    build_authenticate_code: build_authenticate_code,
+    finder_authenticate_code: finder_authenticate_code
+};

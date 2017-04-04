@@ -8,9 +8,14 @@ import {OauthService} from "../../service/oauth.service";
   styleUrls: ['./auth-login.component.css']
 })
 export class AuthLoginComponent implements OnInit {
-  client: any;
+  clientProfile: any;
   username: string;
   password: string;
+  scope: string;
+  redirect_uri: string;
+  client_id: string;
+  state: number;
+  error: string;
 
   constructor(private route: ActivatedRoute,
               private router: Router,
@@ -19,22 +24,27 @@ export class AuthLoginComponent implements OnInit {
 
   ngOnInit() {
     this.route.params.subscribe((params) => {
-        this.oauthService.get_client_profile(params['client_id'], params['redirect_uri'], params['scope']).then(
+        this.client_id = params['client_id'];
+        this.scope = params['scope'];
+        this.redirect_uri = params['redirect_uri'];
+        this.state = params['state'];
+        this.oauthService.get_client_profile(this.client_id, this.redirect_uri, this.scope).then(
           (client) => {
-            this.client = client
+            this.clientProfile = client
           }
         )
       }
     )
   }
-  doLogin() {
-    console.log('you click dologin')
-    this.oauthService.oauth_login(this.username, this.password, this.client).then(res => {
-      console.log(res)
-      window.location.href=`${this.client.redirect_uri}?code=${res.code}`
-    }, err => {
-      console.log(err)
-    })
+
+  async doLogin() {
+    try {
+      let res = await this.oauthService.oauth_login(this.username, this.password, this.client_id, this.redirect_uri, this.scope, this.state);
+      window.location.href = `${this.clientProfile.redirect_uri}?code=${res.code}&state=${res.state}&timestamp=${new Date().getDate()}`;
+    } catch (e) {
+      this.error = e.message;
+    }
   }
+
 
 }

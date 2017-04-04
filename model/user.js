@@ -29,8 +29,7 @@ userSchema.statics.findByUsername = (username) => {
             resolve(user);
         })
     })
-}
-
+};
 
 userSchema.statics.insertUser = async (user) => {
     return new Promise((resove) => {

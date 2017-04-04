@@ -17,7 +17,5 @@ route.post('/register.md', async (ctx) => {
     }
     let client = await ClientService.register(client_name, redirect_uri);
     ctx.body = client
-})
-
-
+});
 module.exports = route

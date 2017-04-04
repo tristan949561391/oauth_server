@@ -3,8 +3,8 @@
  */
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const conn = require('./conn/mongoose')
-const redis = require('./conn/redis')
+const conn = require('./conn/mongoose');
+const redis = require('./conn/redis');
 
 const clientSchema = new Schema({
     client_name: String,
@@ -23,7 +23,7 @@ clientSchema.statics.findByClientId = (client_id) => {
             r(client)
         })
     })
-}
+};
 
 clientSchema.statics.insertClient = async (client) => {
     return new Promise((resove, reject) => {
@@ -31,23 +31,23 @@ clientSchema.statics.insertClient = async (client) => {
             if (err) {
                 reject(err)
             }
-            if (clientFind != null) {
+            if (clientFind !== null) {
                 reject(new Error('clien_id have already'))
             }
-            let clientEntity = new Client(client)
+            let clientEntity = new Client(client);
             clientEntity.save((err, data) => {
-                if (err || data == null) {
+                if (err || data === null) {
                     reject(new Error('insert falure'))
                 }
                 resove(data);
             })
         })
     })
-}
+};
 
 
 const Client = conn.model('client_table', clientSchema);
-module.exports = Client
+module.exports = Client;
 
 
 

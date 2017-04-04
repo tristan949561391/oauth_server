@@ -43,6 +43,26 @@ const Util = {
         if (this.isEmpty(str))return false;
         if (str.length <= 6) return false;
         return true;
+    },
+    include: function (all, sub, split) {
+        return new Promise(resolve => {
+            let allArr = all.split(split);
+            let subArr = sub.split(split);
+            let sum = 0;
+            for (let i = 0; i < allArr.length; i++) {
+                for (let j = 0; j < subArr.length; j++) {
+                    if (allArr[i] === subArr[j]) {
+                        sum++;
+                    }
+                }
+            }
+            if (sum === subArr.length) {
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        })
+
     }
 }
 module.exports = Util

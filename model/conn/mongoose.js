@@ -10,5 +10,5 @@ mongo.once('open', function () {
 });
 mongo.on('error', function () {
     console.error('mongo 数据库连接失败');
-})
-module.exports = mongo
+});
+module.exports = mongo;

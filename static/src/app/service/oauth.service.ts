@@ -4,30 +4,31 @@ import {Http} from "@angular/http";
 @Injectable()
 export class OauthService {
 
-  auth_client_uri: string = 'http://localhost:3000/oauth/client/validate.md';
-  auth_login_uri: string = 'http://localhost:3000/oauth/authorize.md';
+  auth_client_uri: string = '/oauth/client/validate.md';
+  auth_login_uri: string = '/oauth/authorize.md';
 
   constructor(private http: Http) {
 
   }
 
 
-  oauth_login(username: string, password: string, client: any): Promise<any> {
+  oauth_login(username: string, password: string, client_id: string, redirect_uri: string, scope: string, state: number): Promise<any> {
     let param = {
-      client_id: client.client_id,
-      redirect_uri: client.redirect_uri,
-      scope: client.scope,
-      state: client.state,
+      client_id: client_id,
+      redirect_uri: redirect_uri,
+      scope: scope,
+      state: state,
       username: username,
       password: password
     }
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.http.post(this.auth_login_uri, param).map(res => res.json()).subscribe(
         (data) => {
           resolve(data)
         },
         (err) => {
-          resolve(null)
+          let e = JSON.parse(err._body)
+          reject(e)
         }
       )
     })
@@ -39,17 +40,12 @@ export class OauthService {
       redirect_uri: redirect_uri,
       scope: scope
     }
-    return new Promise((resolve) => {
-      if (client_id != null && redirect_uri != null) {
-        this.http.post(this.auth_client_uri, params).map(rea => rea.json()).subscribe((data) => {
-          resolve(data)
-        }, (err) => {
-          console.log(err)
-          resolve(null)
-        })
-      } else {
-        resolve(null)
-      }
+    return new Promise((resolve, reject) => {
+      this.http.post(this.auth_client_uri, params).map(rea => rea.json()).subscribe((data) => {
+        resolve(data)
+      }, (err) => {
+        reject(JSON.parse(err._body))
+      })
     })
   }
 }
