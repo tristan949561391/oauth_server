@@ -38,14 +38,14 @@ async function register(client_name, redirect_uri) {
 async function validate(client_id, redirect_uri, scope) {
     let client = await clientModel.findByClientId(client_id);
     if (client === null) {
-        throw new Errors.BusinessError(500, '找不到对应授权的客户端');
+        throw new Errors.BusinessError(1001, '找不到对应授权的客户端');
     }
     if (client.redirect_uri !== redirect_uri) {
-        throw new Errors.BusinessError(500, '重定向地址错误');
+        throw new Errors.BusinessError(1002, '重定向地址错误');
     }
     let scopeAllInclude = await commonUtil.include(client.scope, scope, ',');
     if (!scopeAllInclude) {
-        throw new Errors.BusinessError(500, '无法匹配对应的scope权限');
+        throw new Errors.BusinessError(1003, '无法匹配对应的scope权限');
     }
     return client;
 }

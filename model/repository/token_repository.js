@@ -16,44 +16,48 @@ async function build_token_bycode(user_id, client_id, scope, time) {
     let token = {
         expire: time | 3600,
         access_token: codeUtils.access_token_builder(),
-        fresh_token: codeUtils.fresh_token_builder(),
+        fresh_token: codeUtils.fresh_token_builder()
     };
+
     let token_data = {
         user_id: user_id,
         client_id: client_id,
         scope: scope,
-        date: new Date()
+        date: Date.now(),
+        expire_date: Date.now() + time * 1000
     };
     let fresh_data = {
         user_id: user_id,
         client_id: client_id,
         access_token: token.access_token,
         scope: scope,
-        date: new Date()
+        date: Date.now() + 60000 * 60 * 24 * 7
     };
-    let isOk = await  new Promise((resolve) => {
-        redis.set('access_token:' + token.access_token, JSON.stringify(token_data), (err, data) => {
-            redis.expire('access_token:' + token.access_token, token.expire);
-            resolve(data);
-        })
+
+    let tokenBlow = {
+        access_token: token.access_token,
+        fresh_token: token.fresh_token,
+        create_time: Date.now()
+
+    };
+    await new Promise(resolve => {
+        redis.get(`tokens:${user_id}:client:${client_id}`, (err, data) => {
+            let multi = redis.multi();
+            if (!util.isNullOrUndefined(data)) {
+                let d = JSON.parse(data);
+                multi
+                    .del('access_token:' + d.access_token)
+                    .del('fresh_token:' + d.fresh_token)
+            }
+            multi
+                .set('access_token:' + token.access_token, JSON.stringify(token_data))
+                .set('fresh_token:' + token.fresh_token, JSON.stringify(fresh_data))
+                .set(`tokens:${user_id}:client:${client_id}`, JSON.stringify(tokenBlow))
+                .exec(() => {
+                    resolve()
+                })
+        });
     });
-    if (util.isNullOrUndefined(isOk)) {
-        return null;
-    }
-
-    isOk = await new Promise((resolve) => {
-        redis.set('fresh_token:' + token.fresh_token, JSON.stringify(fresh_data), (err, data) => {
-            redis.expire('fresh_token:' + token.fresh_token, 3600 * 24 * 7);
-            resolve(data);
-        })
-    });
-
-    if (util.isNullOrUndefined(isOk)) {
-        redis.del('access_token:' + token.access_token);
-        redis.del('fresh_token:' + token.fresh_token);
-        return null
-    }
-
     return token;
 }
 
@@ -69,34 +73,49 @@ async function build_token_byfresh(fresh_token, time) {
             if (err || util.isNullOrUndefined(data)) {
                 resolve(null)
             }
-            resolve(JSON.parse(data));
+            redis
+                .multi()
+                .del('access_token:' + fresh_data.access_token)
+                .del('fresh_token:' + fresh_token)
+                .exec();
+            let token = JSON.parse(data);
+            if (token.expire_date < Date.now()) {
+                resolve(null);
+            }
+            resolve(token)
         })
     });
     if (util.isNullOrUndefined(fresh_data)) {
         return null;
     }
-    let token = await this.build_token_bycode(fresh_data.user_id, fresh_data.client_id, fresh_data.scope, time);
-    redis.del('access_token:' + fresh_data.access_token);
-    redis.del('fresh_token:' + fresh_token);
-    return token;
+    return await this.build_token_bycode(fresh_data.user_id, fresh_data.client_id, fresh_data.scope, time);
 }
 
 
 async function find_by_access_token(access_token) {
-    let token = await  new Promise((resolve) => {
-        redis.get('access_token:' + access_token, (err, token) => {
-            if (err || util.isNullOrUndefined(token)) {
+    return await new Promise((resolve) => {
+        redis.get('access_token:' + access_token, (err, data) => {
+            if (err || util.isNullOrUndefined(data)) {
                 resolve(null)
             }
-            resolve(JSON.parse(token));
+            let token = JSON.parse(data);
+            if (token.expire_date < Date.now()) {
+                redis.del('access_token:' + access_token);
+                resolve(null)
+            }
+            resolve(token);
         })
     });
-    console.log('token');
-    return token;
+}
+
+
+async function build_token_bypassword(user_id, client_id, scope, time) {
+    return await this.build_token_bycode(user_id, client_id, scope, time);
 }
 
 module.exports = {
     build_token_bycode: build_token_bycode,
     build_token_byfresh: build_token_byfresh,
-    find_by_access_token: find_by_access_token
+    find_by_access_token: find_by_access_token,
+    build_token_bypassword: build_token_bypassword
 };

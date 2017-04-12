@@ -21,22 +21,25 @@ async function build_authenticate_code(client_id, redirect_uri, scope, username,
     //验证客户端的合法性
     let client = await clientModel.findByClientId(client_id);
     if (client === null) {
-        throw new BusinessError(500, '没有找到该客户端');
+        throw new BusinessError(1001, '没有找到该客户端');
     }
     if (client.redirect_uri !== redirect_uri) {
-        throw new BusinessError(500, '重定向地址不正确')
+        throw new BusinessError(1002, '重定向地址不正确')
     }
-    let scopeInclude=await commonUtil.include(client.scope,scope,',');
+    if (!await commonUtil.ArrayInclude('authenticate_code', client.auth_type)) {
+        throw new BusinessError(1008, '不支持authenticate_code验证方式');
+    }
+    let scopeInclude = await commonUtil.include(client.scope, scope, ',');
     if (!scopeInclude) {
-        throw new BusinessError(500, 'scope权限无法匹配');
+        throw new BusinessError(1003, 'scope权限无法匹配');
     }
     //验证用户
     let user = await userModel.findByUsername(username);
     if (user === null) {
-        throw new BusinessError(500, '没有该用户')
+        throw new BusinessError(1004, '没有该用户')
     }
     if (user.password !== password) {
-        throw new BusinessError(500, '密码错误')
+        throw new BusinessError(1005, '密码错误')
     }
     //获取授权码
     let code = await authCode_repository.build_authenticate_code(user, client, scope);
@@ -51,35 +54,63 @@ async function build_authenticate_code(client_id, redirect_uri, scope, username,
  * @param code
  * @returns {Promise.<{expire: number, access_token: *, fresh_token: *}>}
  */
-async function build_token(client_id, redirect_uri, client_secret, code) {
+async function build_token_by_code(client_id, redirect_uri, client_secret, code) {
     let authdata = await authCode_repository.finder_authenticate_code(client_id, code);
     if (authdata === null) {
-        throw new BusinessError(500, '无效的code');
+        throw new BusinessError(1086, '无效的code');
     }
     if (authdata.client.client_id !== client_id
         || authdata.client.redirect_uri !== redirect_uri
         || authdata.client.client_secret !== client_secret) {
         //和上一步验证不匹配
-        throw new BusinessError(500, '客户端验证失败')
+        throw new BusinessError(1087, '客户端验证失败')
     }
     //客户端验证成功，开始执行获取token任务
     let token = await token_repository.build_token_bycode(authdata.user._id, authdata.client.client_id, authdata.scope, 3600);
     if (token === null) {
-        throw new BusinessError(500, '令牌创建失败')
+        throw new BusinessError(1088, '令牌创建失败')
+    }
+    return token;
+}
+
+async function fresh_token(client_id, client_secret, fresh_token) {
+    let client = await clientModel.findByClientId(client_id);
+    if (client === null) {
+        throw new BusinessError(1056, '找不到该客户端');
+    }
+    if (client.client_secret !== client_secret) {
+        throw new BusinessError(1056, 'client_secret错误');
+    }
+    if (!await commonUtil.ArrayInclude('fresh_token', client.auth_type)) {
+        throw new BusinessError(1008, '不支持该授权方式')
+    }
+    let token = await token_repository.build_token_byfresh(fresh_token, 3600);
+    if (token === null) {
+        throw new BusinessError(1057, "fresh_token无效，无法换取")
     }
     return token;
 }
 
 
-async function fresh_token(client_id, client_secret, fresh_token) {
+async function build_token_by_password(client_id, client_secret, scope, username, password) {
+    //----验证用户
+    let user = await userModel.findByUsername(username);
+    if (user === null) throw new BusinessError(1004, '没有该用户');
+    if (user.password !== password) throw new BusinessError(1005, '密码错误');
+
+    // ----验证客户端
     let client = await clientModel.findByClientId(client_id);
-    if (client === null) {
-        throw new BusinessError(500, '找不到该客户端');
+    if (client === null) throw new BusinessError(1056, '找不到该客户端');
+    if (client.client_secret !== client_secret)throw new BusinessError(1056, 'client_secret错误');
+    if (!await commonUtil.ArrayInclude('password', client.auth_type)) {
+        throw new BusinessError(1008, '不支持该授权方式')
     }
-    if (client.client_secret !== client_secret) {
-        throw new BusinessError(500, 'client_secret错误');
+    let scopeContainer = await commonUtil.include(client.scope, scope, ',');
+    if (!scopeContainer)throw new BusinessError(1057, "scope权限不匹配");
+    let token = await token_repository.build_token_bypassword(user._id, client.client_id, scope, 3600);
+    if (token === null) {
+        throw new BusinessError(1088, '令牌创建失败')
     }
-    let token = await token_repository.build_token_byfresh(fresh_token, 3600);
     return token;
 }
 
@@ -115,7 +146,9 @@ let authorization = (scopes) => {
 
 module.exports = {
     build_authenticate_code: build_authenticate_code,
-    build_token: build_token,
+    build_token_by_code: build_token_by_code,
+    build_token_by_password: build_token_by_password,
     fresh_token: fresh_token,
     authorization: authorization
 };
+

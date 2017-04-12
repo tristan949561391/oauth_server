@@ -63,6 +63,16 @@ const Util = {
             }
         })
 
+    },
+    ArrayInclude: function (value, arrs) {
+        return new Promise(resolve => {
+            arrs.forEach(va => {
+                if (va === value) {
+                    resolve(true);
+                }
+            })
+            resolve(false)
+        })
     }
 }
 module.exports = Util
